@@ -26,10 +26,14 @@ double next_exp(double lambda, double upper) {
     return val;
 }
 
-Process* generateProcess(int n, int ncpu, int seed, double lambda, double upper ){
+Process* generateProcess(int n, int ncpu, double lambda, double upper ){
 
     //array of processes
     Process* processArray = (Process*) calloc(n, sizeof(Process));
+    if (processArray == NULL) {
+        fprintf(stderr, "ERROR: memory allocation failed\n");
+        return NULL;
+    }
 
     for (int i = 0; i<n; i++){
         Process* p = &processArray[i];
@@ -43,7 +47,17 @@ Process* generateProcess(int n, int ncpu, int seed, double lambda, double upper 
 
         sprintf(p->id, "%c%d", letter, digit);
         p-> cpuBursts = calloc(p->numCpuBursts, sizeof(int));
+        if (p->cpuBursts == NULL) {
+            fprintf(stderr, "ERROR: memory allocation failed\n");
+           // free(process);
+            return NULL;
+        }
         p-> ioBursts = calloc((p->numCpuBursts - 1), sizeof(int));
+        if (p->ioBursts == NULL) {
+            fprintf(stderr, "ERROR: memory allocation failed\n");
+           // free(process);
+            return NULL;
+        }
 
         for (int j = 0; j < p->numCpuBursts; j++) {
             int cpuBurstTime = (int) ceil(next_exp(lambda, upper));
@@ -127,6 +141,11 @@ int main( int argc, char ** argv ){
         return EXIT_FAILURE;
     }
 
+    if (n > 260) {
+        fprintf(stderr, "ERROR: number of processes must be <= 260\n");
+        return EXIT_FAILURE;
+    }
+
     if (ncpu < 0 || ncpu > n) {
         fprintf(stderr, "ERROR: invalid number of CPU-bound processes\n");
         return EXIT_FAILURE;
@@ -144,7 +163,8 @@ int main( int argc, char ** argv ){
 
     srand48(seed);
 
-    Process* process = generateProcess(n, ncpu, seed, lambda, upper);
+    Process* process = generateProcess(n, ncpu, lambda, upper);
+    
     output(process, n, ncpu,  seed,  lambda, upper);
 
     for(int i = 0; i<n; i++){
