@@ -99,11 +99,21 @@ void output(Process* process, int n, int ncpu, int seed, double lambda, double u
         //int is_cpu_bound = (i >= (n - ncpu));
 
         if(p->isCpuBound){
-            printf("\nCPU-bound process %s: arrival time %dms; %d CPU bursts:\n",
+            if(p->numCpuBursts == 1){
+                printf("\nCPU-bound process %s: arrival time %dms; %d CPU burst:\n",
                  p->id , p->arrivalTime, p->numCpuBursts);
+            }else{
+                printf("\nCPU-bound process %s: arrival time %dms; %d CPU bursts:\n",
+                     p->id , p->arrivalTime, p->numCpuBursts); 
+            }
         } else{
-            printf("\nI/O-bound process %s: arrival time %dms; %d CPU bursts:\n",
-                 p->id, p->arrivalTime, p->numCpuBursts);
+            if(p->numCpuBursts == 1){
+                printf("\nI/O-bound process %s: arrival time %dms; %d CPU burst:\n",
+                     p->id, p->arrivalTime, p->numCpuBursts);
+            } else{
+                printf("\nI/O-bound process %s: arrival time %dms; %d CPU bursts:\n",
+                     p->id, p->arrivalTime, p->numCpuBursts);
+            }
         }
 
         for (int j = 0; j< p->numCpuBursts; j++){
