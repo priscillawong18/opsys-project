@@ -5,6 +5,16 @@
 #include <string.h>
 #include <math.h>
 
+typedef struct {
+    char id[3];
+    int arrivalTime;
+    int numCpuBursts;
+    int isCpuBound;
+    int *cpuBursts;
+    int *ioBursts;
+} Process;
+
+
 double next_exp(double lambda, double upper) {
     double r, val;
 
@@ -15,6 +25,90 @@ double next_exp(double lambda, double upper) {
 
     return val;
 }
+
+Process* generateProcess(int n, int ncpu, int seed, double lambda, double upper ){
+
+    //array of processes
+    Process* processArray = (Process*) calloc(n, sizeof(Process));
+
+    for (int i = 0; i<n; i++){
+        Process* p = &processArray[i];
+
+        char letter = 'A' + (i / 10);
+        int digit = i % 10;
+        p->isCpuBound = (i >= (n - ncpu));
+
+        p->arrivalTime = floor(next_exp(lambda, upper)); 
+        p->numCpuBursts = ceil(16 * drand48()); 
+
+        sprintf(p->id, "%c%d", letter, digit);
+        p-> cpuBursts = calloc(p->numCpuBursts, sizeof(int));
+        p-> ioBursts = calloc((p->numCpuBursts - 1), sizeof(int));
+
+        for (int j = 0; j < p->numCpuBursts; j++) {
+            int cpuBurstTime = (int) ceil(next_exp(lambda, upper));
+
+            if (p->isCpuBound) {
+                cpuBurstTime *= 6;
+            }
+
+            p->cpuBursts[j] = cpuBurstTime;
+
+            if (j < p->numCpuBursts - 1) {
+                int ioBurstTime = (int) ceil(next_exp(lambda, upper));
+
+                if (!p->isCpuBound) {
+                    ioBurstTime *= 8;
+                }
+
+                p->ioBursts[j] = ioBurstTime;
+            }
+        }
+
+    }
+
+    return processArray;
+}
+
+void output(Process* process, int n, int ncpu, int seed, double lambda, double upper){
+
+    //HEADER
+    if (ncpu == 1){
+        printf("<<< -- process set (n=%d) with %d CPU-bound process\n", n, ncpu );
+    } else{
+        printf("<<< -- process set (n=%d) with %d CPU-bound processes\n", n, ncpu );
+    }
+    printf("<<< -- seed=%d; lambda=%.6f; upper bound=%.0f\n", seed, lambda, upper);
+
+     for(int i = 0; i<n; i++){
+        Process* p = &process[i];
+        //int is_cpu_bound = (i >= (n - ncpu));
+
+        if(p->isCpuBound){
+            printf("\nCPU-bound process %s: arrival time %dms; %d CPU bursts:\n",
+                 p->id , p->arrivalTime, p->numCpuBursts);
+        } else{
+            printf("\nI/O-bound process %s: arrival time %dms; %d CPU bursts:\n",
+                 p->id, p->arrivalTime, p->numCpuBursts);
+        }
+
+        for (int j = 0; j< p->numCpuBursts; j++){
+            printf("==> CPU burst %dms", p->cpuBursts[j]);
+            if(j < p->numCpuBursts - 1){
+                printf(" ==> I/O burst %dms\n", p->ioBursts[j]);
+            } else{
+                printf("\n");
+            }
+
+        }   
+        
+
+    }
+
+
+}
+
+
 int main( int argc, char ** argv ){
 
     if (argc != 6){
@@ -50,32 +144,15 @@ int main( int argc, char ** argv ){
 
     srand48(seed);
 
-    //HEADER
-    if (ncpu == 1){
-        printf("<<< -- process set (n=%d) with %d CPU-bound process\n", n, ncpu );
-    } else{
-        printf("<<< -- process set (n=%d) with %d CPU-bound processes\n", n, ncpu );
+    Process* process = generateProcess(n, ncpu, seed, lambda, upper);
+    output(process, n, ncpu,  seed,  lambda, upper);
+
+    for(int i = 0; i<n; i++){
+        free(process[i].cpuBursts);
+        free(process[i].ioBursts);
     }
-    printf("<<< -- seed=%d; lambda=%06f; upper bound=%.0f\n", seed, lambda, upper);
 
-    // char wletter = 'A' + (11/10);
-    // printf("letter: %c\n", wletter);
-    for (int i = 0; i < n; i++) {
-        char letter = 'A' + (i / 10);
-        int digit = i % 10;
-        int is_cpu_bound = (i >= (n - ncpu));
-
-        int arrival = (int) floor(next_exp(lambda, upper));
-        int bursts = (int) ceil(16 * drand48());
-
-        if (is_cpu_bound) {
-            printf("CPU-bound process %c%d: arrival time %dms; %d CPU bursts:\n",
-                letter, digit, arrival, bursts);
-        } else {
-            printf("I/O-bound process %c%d: arrival time %dms; %d CPU bursts:\n",
-                letter, digit, arrival, bursts);
-        }
-    }
+    free(process);
 
 
     return EXIT_SUCCESS;
