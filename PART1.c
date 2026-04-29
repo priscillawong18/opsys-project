@@ -93,7 +93,6 @@ void output(Process* process, int n, int ncpu, int seed, double lambda, double u
         printf("<<< -- process set (n=%d) with %d CPU-bound processes\n", n, ncpu );
     }
     printf("<<< -- seed=%d; lambda=%.6f; upper bound=%.0f\n", seed, lambda, upper);
-
      for(int i = 0; i<n; i++){
         Process* p = &process[i];
         //int is_cpu_bound = (i >= (n - ncpu));
@@ -174,8 +173,6 @@ int main( int argc, char ** argv ){
     srand48(seed);
 
     Process* process = generateProcess(n, ncpu, lambda, upper);
-    
-    output(process, n, ncpu,  seed,  lambda, upper);
 
     for(int i = 0; i<n; i++){
         free(process[i].cpuBursts);
